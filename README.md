@@ -4,6 +4,8 @@ Final project for CS376
 
 Main code for image captioning model "Show, Attend, and Tell" implementation is based on [a-PyTorch-Tutorial-to-Image-Captioning](https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Image-Captioning).
 
+Before running this code, make sure that you set the appropriate path for each files.
+
 # Dataset
 
 You'd need to download the [Training (13GB)](http://images.cocodataset.org/zips/train2014.zip) and [Validation (6GB)](http://images.cocodataset.org/zips/val2014.zip) images. We will use  [Andrej Karpathy's training, validation, and test splits](http://cs.stanford.edu/people/karpathy/deepimagesent/caption_datasets.zip).
