@@ -38,7 +38,23 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
     test_image_captions = []
     word_freq = Counter()
 
+    train_length = 0
+    val_length = 0
+    test_length = 0
     for img in data['images']:
+        if img['split'] in {'train', 'restval'}:
+            train_length += 1
+        elif img['split'] in {'val'}:
+            val_length += 1
+        elif img['split'] in {'test'}:
+            test_length +=1
+    
+    train_length = train_length//10
+    val_length = val_length//5
+    test_length = test_length//5
+
+    for img in data['images']:
+
         captions = []
         for c in img['sentences']:
             # Update word frequency
@@ -53,14 +69,20 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
             image_folder, img['filename'])
 
         if img['split'] in {'train', 'restval'}:
-            train_image_paths.append(path)
-            train_image_captions.append(captions)
+            if train_length >=0:
+                train_image_paths.append(path)
+                train_image_captions.append(captions)
+            train_length -= 1
         elif img['split'] in {'val'}:
-            val_image_paths.append(path)
-            val_image_captions.append(captions)
+            if val_length >= 0:
+                val_image_paths.append(path)
+                val_image_captions.append(captions)
+            val_length -= 1
         elif img['split'] in {'test'}:
-            test_image_paths.append(path)
-            test_image_captions.append(captions)
+            if test_length >= 0:
+                test_image_paths.append(path)
+                test_image_captions.append(captions)
+            test_length -= 1
 
     # Sanity check
     assert len(train_image_paths) == len(train_image_captions)
