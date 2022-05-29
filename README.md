@@ -18,6 +18,10 @@ To train your model from scratch, simply run this file –
 
 python train.py
 
+# How to Train
+
+First execute first_train.py, then use prune.py with the desired hyperparameters
+
 # Inference
 
 See caption.py.

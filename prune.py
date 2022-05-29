@@ -35,7 +35,7 @@ alpha_c = 1.  # regularization parameter for 'doubly stochastic attention', as i
 best_bleu4 = 0.  # BLEU-4 score right now
 print_freq = 100  # print training/validation stats every __ batches
 fine_tune_encoder = False  # fine-tune encoder?
-checkpoint = 'BEST_checkpoint_first_training.pth.tar'  # path to checkpoint, None if none
+checkpoint = 'checkpoint_first_training.pth.tar'  # path to checkpoint, None if none
 
 #pruning
 encoder_prune = True
