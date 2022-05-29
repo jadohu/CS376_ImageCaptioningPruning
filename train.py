@@ -9,9 +9,10 @@ from models import Encoder, DecoderWithAttention
 from datasets import *
 from utils import *
 from nltk.translate.bleu_score import corpus_bleu
+# import torch.nn.utils.prune as prune
 
 # Data parameters
-data_folder = '/content/drive/MyDrive/CS376/datasets'  # folder with data files saved by create_input_files.py
+data_folder = 'dataset/Images'  # folder with data files saved by create_input_files.py
 data_name = 'coco_5_cap_per_img_5_min_word_freq'  # base name shared by data files
 
 # Model parameters
@@ -24,7 +25,7 @@ cudnn.benchmark = True  # set to true only if inputs to model are fixed size; ot
 
 # Training parameters
 start_epoch = 0
-epochs = 120  # number of epochs to train for (if early stopping is not triggered)
+epochs = 20  # number of epochs to train for (if early stopping is not triggered)
 epochs_since_improvement = 0  # keeps track of number of epochs since there's been an improvement in validation BLEU
 batch_size = 32
 workers = 1  # for data-loading; right now, only 1 works with h5py
@@ -35,8 +36,10 @@ alpha_c = 1.  # regularization parameter for 'doubly stochastic attention', as i
 best_bleu4 = 0.  # BLEU-4 score right now
 print_freq = 100  # print training/validation stats every __ batches
 fine_tune_encoder = False  # fine-tune encoder?
-checkpoint = '/content/drive/MyDrive/CS376/a-PyTorch-Tutorial-to-Image-Captioning/checkpoint_coco_5_cap_per_img_5_min_word_freq.pth.tar'  # path to checkpoint, None if none
+checkpoint = None  # path to checkpoint, None if none
 
+#checkpoint name
+ckpt_name = 'first_training'
 
 def main():
     """
@@ -113,7 +116,8 @@ def main():
               criterion=criterion,
               encoder_optimizer=encoder_optimizer,
               decoder_optimizer=decoder_optimizer,
-              epoch=epoch)
+              epoch=epoch,
+              l1_loss=True)
 
         # One epoch's validation
         recent_bleu4 = validate(val_loader=val_loader,
@@ -135,7 +139,7 @@ def main():
                         decoder_optimizer, recent_bleu4, is_best)
 
 
-def train(train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_optimizer, epoch):
+def train(train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_optimizer, epoch, l1_loss=True):
     """
     Performs one epoch's training.
 
@@ -176,14 +180,23 @@ def train(train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_
 
         # Remove timesteps that we didn't decode at, or are pads
         # pack_padded_sequence is an easy trick to do this
-        scores= pack_padded_sequence(scores, decode_lengths, batch_first=True).data
+        # import pdb;pdb.set_trace()
+        scores = pack_padded_sequence(scores, decode_lengths, batch_first=True).data
         targets = pack_padded_sequence(targets, decode_lengths, batch_first=True).data
+
+        
+
+        # import pdb;pdb.set_trace()
 
         # Calculate loss
         loss = criterion(scores, targets)
 
         # Add doubly stochastic attention regularization
         loss += alpha_c * ((1. - alphas.sum(dim=1)) ** 2).mean()
+
+        #l1 regularaization
+        if l1_loss:
+            loss += 0.001*l1_norm(decoder)
 
         # Back prop.
         decoder_optimizer.zero_grad()
@@ -222,7 +235,7 @@ def train(train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_
                                                                           top5=top5accs))
 
 
-def validate(val_loader, encoder, decoder, criterion):
+def validate(val_loader, encoder, decoder, criterion, word_map):
     """
     Performs one epoch's validation.
 
@@ -325,7 +338,6 @@ def validate(val_loader, encoder, decoder, criterion):
                 bleu=bleu4))
 
     return bleu4
-
 
 if __name__ == '__main__':
     main()

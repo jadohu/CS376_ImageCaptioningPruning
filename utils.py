@@ -7,13 +7,13 @@ from scipy.misc import imread, imresize
 from tqdm import tqdm
 from collections import Counter
 from random import seed, choice, sample
+import torch.nn.utils.prune as prune
 
 
 def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_image, min_word_freq, output_folder,
                        max_len=100):
     """
     Creates input files for training, validation, and test data.
-
     :param dataset: name of dataset, one of 'coco', 'flickr8k', 'flickr30k'
     :param karpathy_json_path: path of Karpathy JSON file with splits and captions
     :param image_folder: folder with downloaded images
@@ -64,6 +64,7 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
 
         if len(captions) == 0:
             continue
+        # import pdb;pdb.set_trace()
 
         path = os.path.join(image_folder, img['filepath'], img['filename']) if dataset == 'coco' else os.path.join(
             image_folder, img['filename'])
@@ -121,6 +122,7 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
 
             enc_captions = []
             caplens = []
+            # import pdb;pdb.set_trace()
 
             for i, path in enumerate(tqdm(impaths)):
 
@@ -134,6 +136,7 @@ def create_input_files(dataset, karpathy_json_path, image_folder, captions_per_i
                 assert len(captions) == captions_per_image
 
                 # Read images
+                # import pdb;pdb.set_trace()
                 img = imread(impaths[i])
                 if len(img.shape) == 2:
                     img = img[:, :, np.newaxis]
@@ -306,3 +309,45 @@ def accuracy(scores, targets, k):
     correct = ind.eq(targets.view(-1, 1).expand_as(ind))
     correct_total = correct.view(-1).float().sum()  # 0D tensor
     return correct_total.item() * (100.0 / batch_size)
+
+def l1_norm(model):
+    l1_norm=0
+    for name, param in model.named_parameters():    
+        if 'weight' in name.split('.')[-1]:
+            l1_norm+=torch.sum(abs(param))
+    return l1_norm
+
+def prune_encoder(model, amount):
+  for name, module in model.named_modules():
+    if isinstance(module, torch.nn.Conv2d):
+      if module.requires_grad_:
+        prune.l1_unstructured(module, name='weight', amount=amount)
+
+def prune_decoder(model, amount):
+    # import pdb;pdb.set_trace()
+    for _, module in model.named_modules():
+        if hasattr(module, 'weight'):
+            prune.l1_unstructured(module, 'weight', amount=amount)
+        elif hasattr(module, 'weight_ih'):
+            prune.l1_unstructured(module, 'weight_ih', amount=amount)
+        elif hasattr(module, 'weight_hh'):
+            prune.l1_unstructured(module, 'weight_hh', amount=amount)
+
+def countNonZeroWeights_encoder(model):
+    zeros = 0
+    for name, module in model.named_modules():
+      if isinstance(module, torch.nn.Conv2d):
+        if module.requires_grad_:
+          zeros += torch.sum((module.weight != 0).int())
+    return zeros.item()
+
+def countNonZeroWeights_decoder(model):
+    for name, module in model.named_modules():
+        non_zeros=0
+        if hasattr(module, 'weight'):
+            non_zeros += torch.sum((module.weight != 0).int())
+        elif hasattr(module, 'weight_ih'):
+            non_zeros += torch.sum((module.weight_ih != 0).int())
+        elif hasattr(module, 'weight_hh'):
+            non_zeros += torch.sum((module.weight_hh != 0).int())
+    return non_zeros.item()
