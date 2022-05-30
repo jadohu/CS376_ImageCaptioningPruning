@@ -24,7 +24,7 @@ cudnn.benchmark = True  # set to true only if inputs to model are fixed size; ot
 
 # Training parameters
 start_epoch = 0
-epochs = 120  # number of epochs to train for (if early stopping is not triggered)
+epochs = 20  # number of epochs to train for (if early stopping is not triggered)
 epochs_since_improvement = 0  # keeps track of number of epochs since there's been an improvement in validation BLEU
 batch_size = 32
 workers = 1  # for data-loading; right now, only 1 works with h5py
@@ -38,7 +38,7 @@ fine_tune_encoder = False  # fine-tune encoder?
 checkpoint = 'checkpoint_first_training.pth.tar'  # path to checkpoint, None if none
 
 #pruning
-encoder_prune = True
+encoder_prune = False
 pruning_rate = 0.5
 
 
@@ -70,9 +70,9 @@ def main():
 
     else:
         checkpoint = torch.load(checkpoint)
-        start_epoch = checkpoint['epoch'] + 1
-        epochs_since_improvement = checkpoint['epochs_since_improvement']
-        best_bleu4 = checkpoint['bleu-4']
+        start_epoch = 0
+        epochs_since_improvement = 0
+        best_bleu4 = 0
         decoder = checkpoint['decoder']
         decoder_optimizer = checkpoint['decoder_optimizer']
         encoder = checkpoint['encoder']
