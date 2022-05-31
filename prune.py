@@ -11,7 +11,7 @@ from utils import *
 from train import *
 from nltk.translate.bleu_score import corpus_bleu
 
-data_folder = '/content/drive/MyDrive/CS376/CS376_ImageCaptioningPruning/datasets/Image'  # folder with data files saved by create_input_files.py
+data_folder = '/content/drive/MyDrive/CS376/datasets'  # folder with data files saved by create_input_files.py
 data_name = 'coco_5_cap_per_img_5_min_word_freq'  # base name shared by data files
 
 # Model parameters
@@ -39,7 +39,7 @@ checkpoint = 'checkpoint_first_training.pth.tar'  # path to checkpoint, None if 
 
 #pruning
 encoder_prune = False
-pruning_rate = 0.5
+pruning_rate = 0.4
 
 
 def main():
@@ -117,7 +117,7 @@ def main():
     for epoch in range(start_epoch, epochs):
 
         # Decay learning rate if there is no improvement for 8 consecutive epochs, and terminate training after 20
-        if epochs_since_improvement == 20:
+        if epochs_since_improvement == 5:
             break
         if epochs_since_improvement > 0 and epochs_since_improvement % 8 == 0:
             adjust_learning_rate(decoder_optimizer, 0.8)

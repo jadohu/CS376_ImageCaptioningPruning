@@ -9,6 +9,7 @@ from models import Encoder, DecoderWithAttention
 from datasets import *
 from utils import *
 from nltk.translate.bleu_score import corpus_bleu
+from nltk.translate.bleu_score import SmoothingFunction
 # import torch.nn.utils.prune as prune
 
 # Data parameters
@@ -196,7 +197,7 @@ def train(train_loader, encoder, decoder, criterion, encoder_optimizer, decoder_
 
         #l1 regularaization
         if l1_loss:
-            loss += 0.001*l1_norm(decoder)
+            loss += 0.0001*l1_norm(decoder)
 
         # Back prop.
         decoder_optimizer.zero_grad()
@@ -329,7 +330,9 @@ def validate(val_loader, encoder, decoder, criterion, word_map):
             assert len(references) == len(hypotheses)
 
         # Calculate BLEU-4 scores
-        bleu4 = corpus_bleu(references, hypotheses)
+        
+        smoothie = SmoothingFunction().method4
+        bleu4 = corpus_bleu(references, hypotheses, smoothing_function=smoothie)
 
         print(
             '\n * LOSS - {loss.avg:.3f}, TOP-5 ACCURACY - {top5.avg:.3f}, BLEU-4 - {bleu}\n'.format(
